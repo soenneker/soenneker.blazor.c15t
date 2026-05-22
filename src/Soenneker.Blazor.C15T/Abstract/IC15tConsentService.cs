@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Soenneker.Blazor.C15t.Models;
@@ -7,19 +5,29 @@ using Soenneker.Blazor.C15t.Models;
 namespace Soenneker.Blazor.C15t.Abstract;
 
 /// <summary>
-/// Blazor interop for c15t consent runtime operations.
+/// A small stateful service over the c15t interop.
 /// </summary>
-public interface IC15tInterop : IAsyncDisposable
+public interface IC15tConsentService
 {
     /// <summary>
-    /// Initializes the c15t runtime.
+    /// The most recently observed consent state.
+    /// </summary>
+    C15tConsentState? CurrentState { get; }
+
+    /// <summary>
+    /// Initializes c15t and captures the current state.
     /// </summary>
     ValueTask<C15tConsentState?> Initialize(C15tOptions? options = null, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets the current consent state.
+    /// Returns true when the specified category has consent.
     /// </summary>
-    ValueTask<C15tConsentState?> GetState(CancellationToken cancellationToken = default);
+    bool HasConsent(string category);
+
+    /// <summary>
+    /// Refreshes the current state from c15t.
+    /// </summary>
+    ValueTask<C15tConsentState?> Refresh(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Accepts all displayed consent categories.
@@ -32,7 +40,7 @@ public interface IC15tInterop : IAsyncDisposable
     ValueTask<C15tConsentState?> RejectNonNecessary(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Saves the selected consent choices.
+    /// Saves selected custom consent choices.
     /// </summary>
     ValueTask<C15tConsentState?> SaveCustom(CancellationToken cancellationToken = default);
 
@@ -47,17 +55,17 @@ public interface IC15tInterop : IAsyncDisposable
     ValueTask<C15tConsentState?> SetSelectedConsent(string category, bool value, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Opens the c15t privacy dialog state.
+    /// Opens the privacy dialog.
     /// </summary>
     ValueTask<C15tConsentState?> OpenDialog(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Shows the c15t banner state.
+    /// Shows the consent banner.
     /// </summary>
     ValueTask<C15tConsentState?> ShowBanner(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Closes c15t UI state.
+    /// Closes c15t UI.
     /// </summary>
     ValueTask<C15tConsentState?> CloseUi(CancellationToken cancellationToken = default);
 

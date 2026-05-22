@@ -1,0 +1,33 @@
+@using Soenneker.Blazor.C15t.Abstract
+@using Soenneker.Blazor.C15t.Models
+@inject IC15tConsentService ConsentService
+
+<CascadingValue Value="ConsentService">
+    @ChildContent
+</CascadingValue>
+
+@code {
+    /// <summary>
+    /// The c15t runtime options.
+    /// </summary>
+    [Parameter]
+    public C15tOptions? Options { get; set; }
+
+    /// <summary>
+    /// The child content to render.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    private bool _initialized;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _initialized)
+            return;
+
+        _initialized = true;
+        await ConsentService.Initialize(Options);
+    }
+}
+

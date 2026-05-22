@@ -1,10 +1,10 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Soenneker.Blazor.C15T.Abstract;
+namespace Soenneker.Blazor.C15t.Abstract;
 
 /// <summary>
-/// A higher-level Blazor utility built on top of <see cref="IC15TInterop"/>.
+/// A higher-level Blazor utility built on top of <see cref="IC15tInterop"/>.
 /// </summary>
 public interface IC15t
 {

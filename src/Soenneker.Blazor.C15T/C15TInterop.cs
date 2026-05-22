@@ -1,69 +1,137 @@
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.JSInterop;
-using Soenneker.Asyncs.Initializers;
-using Soenneker.Blazor.Utils.ResourceLoader.Abstract;
+using Soenneker.Atomics.ValueBools;
+using Soenneker.Blazor.C15t.Abstract;
+using Soenneker.Blazor.C15t.Constants;
+using Soenneker.Blazor.C15t.Models;
+using Soenneker.Blazor.Utils.ModuleImport.Abstract;
 using Soenneker.Extensions.CancellationTokens;
 using Soenneker.Utils.CancellationScopes;
-using Soenneker.Blazor.C15T.Abstract;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
-namespace Soenneker.Blazor.C15T;
+namespace Soenneker.Blazor.C15t;
 
-/// <inheritdoc cref="IC15TInterop"/>
-public sealed class C15TInterop : IC15TInterop
+/// <inheritdoc cref="IC15tInterop"/>
+public sealed class C15tInterop : IC15tInterop
 {
-    private const string _modulePath = "Soenneker.Blazor.C15T/js/c15tinterop.js";
-    private const string _jsInitialize = "C15TInterop.initialize";
+    private const string _modulePath = C15tConstants.InteropScript;
 
-    private readonly IJSRuntime _jsRuntime;
-    private readonly IResourceLoader _resourceLoader;
-    private readonly AsyncInitializer _initializer;
+    private readonly IModuleImportUtil _moduleImportUtil;
     private readonly CancellationScope _cancellationScope = new();
 
-    private bool _disposed;
+    private bool _initialized;
+    private ValueAtomicBool _disposed;
 
-    public C15TInterop(IJSRuntime jsRuntime, IResourceLoader resourceLoader)
+    public C15tInterop(IModuleImportUtil moduleImportUtil)
     {
-        _jsRuntime = jsRuntime;
-        _resourceLoader = resourceLoader;
-        _initializer = new AsyncInitializer(InitializeModule);
+        _moduleImportUtil = moduleImportUtil;
     }
 
-    private async ValueTask InitializeModule(CancellationToken cancellationToken)
+    public async ValueTask<C15tConsentState?> Initialize(C15tOptions? options = null, CancellationToken cancellationToken = default)
     {
-        _ = await _resourceLoader.ImportModule(_modulePath, cancellationToken);
-    }
+        ThrowIfDisposed();
 
-    private async ValueTask EnsureInitialized(CancellationToken cancellationToken)
-    {
         CancellationToken linked = _cancellationScope.CancellationToken.Link(cancellationToken, out CancellationTokenSource? source);
 
         using (source)
         {
-            await _initializer.Init(linked);
+            IJSObjectReference module = await _moduleImportUtil.GetContentModuleReference(_modulePath, linked);
+            C15tConsentState? state = await module.InvokeAsync<C15tConsentState?>("initialize", linked, options ?? new C15tOptions());
+            _initialized = true;
+            return state;
         }
     }
 
-    public async ValueTask Initialize(CancellationToken cancellationToken = default)
+    public async ValueTask<C15tConsentState?> GetState(CancellationToken cancellationToken = default)
     {
+        return await Invoke<C15tConsentState?>("getState", cancellationToken);
+    }
+
+    public async ValueTask<C15tConsentState?> AcceptAll(CancellationToken cancellationToken = default)
+    {
+        return await Invoke<C15tConsentState?>("acceptAll", cancellationToken);
+    }
+
+    public async ValueTask<C15tConsentState?> RejectNonNecessary(CancellationToken cancellationToken = default)
+    {
+        return await Invoke<C15tConsentState?>("rejectNonNecessary", cancellationToken);
+    }
+
+    public async ValueTask<C15tConsentState?> SaveCustom(CancellationToken cancellationToken = default)
+    {
+        return await Invoke<C15tConsentState?>("saveCustom", cancellationToken);
+    }
+
+    public async ValueTask<C15tConsentState?> SetConsent(string category, bool value, CancellationToken cancellationToken = default)
+    {
+        return await Invoke<C15tConsentState?>("setConsent", cancellationToken, category, value);
+    }
+
+    public async ValueTask<C15tConsentState?> SetSelectedConsent(string category, bool value, CancellationToken cancellationToken = default)
+    {
+        return await Invoke<C15tConsentState?>("setSelectedConsent", cancellationToken, category, value);
+    }
+
+    public async ValueTask<C15tConsentState?> OpenDialog(CancellationToken cancellationToken = default)
+    {
+        return await Invoke<C15tConsentState?>("openDialog", cancellationToken);
+    }
+
+    public async ValueTask<C15tConsentState?> ShowBanner(CancellationToken cancellationToken = default)
+    {
+        return await Invoke<C15tConsentState?>("showBanner", cancellationToken);
+    }
+
+    public async ValueTask<C15tConsentState?> CloseUi(CancellationToken cancellationToken = default)
+    {
+        return await Invoke<C15tConsentState?>("closeUi", cancellationToken);
+    }
+
+    public async ValueTask<C15tConsentState?> ResetConsents(CancellationToken cancellationToken = default)
+    {
+        return await Invoke<C15tConsentState?>("resetConsents", cancellationToken);
+    }
+
+    private async ValueTask<T> Invoke<T>(string identifier, CancellationToken cancellationToken, params object?[] args)
+    {
+        ThrowIfDisposed();
+
         CancellationToken linked = _cancellationScope.CancellationToken.Link(cancellationToken, out CancellationTokenSource? source);
 
         using (source)
         {
-            await EnsureInitialized(linked);
-            await _jsRuntime.InvokeVoidAsync(_jsInitialize, linked);
+            IJSObjectReference module = await _moduleImportUtil.GetContentModuleReference(_modulePath, linked);
+            return await module.InvokeAsync<T>(identifier, linked, args);
         }
     }
 
     public async ValueTask DisposeAsync()
     {
-        if (_disposed)
+        if (!_disposed.TrySetTrue())
             return;
 
-        _disposed = true;
+        _cancellationScope.Cancel();
 
-        await _resourceLoader.DisposeModule(_modulePath);
-        await _initializer.DisposeAsync();
+        if (_initialized)
+        {
+            try
+            {
+                IJSObjectReference module = await _moduleImportUtil.GetContentModuleReference(_modulePath, CancellationToken.None);
+                await module.InvokeVoidAsync("dispose", CancellationToken.None);
+            }
+            catch
+            {
+                // Best-effort cleanup when the JS runtime may already be unavailable.
+            }
+        }
+
+        await _moduleImportUtil.DisposeContentModule(_modulePath);
         await _cancellationScope.DisposeAsync();
+    }
+
+    private void ThrowIfDisposed()
+    {
+        ObjectDisposedException.ThrowIf(_disposed.Value, this);
     }
 }

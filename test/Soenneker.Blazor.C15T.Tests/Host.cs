@@ -5,9 +5,9 @@ using Serilog;
 using Soenneker.Blazor.MockJsRuntime.Registrars;
 using Soenneker.TestHosts.Unit;
 using Soenneker.Utils.Test;
-using Soenneker.Blazor.C15T.Registrars;
+using Soenneker.Blazor.C15t.Registrars;
 
-namespace Soenneker.Blazor.C15T.Tests;
+namespace Soenneker.Blazor.C15t.Tests;
 
 public sealed class Host : UnitTestHost
 {

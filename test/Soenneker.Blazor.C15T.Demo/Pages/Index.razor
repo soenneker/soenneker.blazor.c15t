@@ -1,10 +1,10 @@
 @page "/"
 @using System.Threading.Tasks
-@using Soenneker.Blazor.C15T.Abstract
+@using Soenneker.Blazor.C15t.Abstract
 
-@inject IC15t C15T
+@inject IC15t C15t
 
-<PageTitle>Soenneker.Blazor.C15T Demo</PageTitle>
+<PageTitle>Soenneker.Blazor.C15t Demo</PageTitle>
 
 <Div Space="Space.Y.Is4">
     <Paragraph TextSize="TextSize.Sm" Class="text-muted-foreground">
@@ -18,6 +18,6 @@
         if (!firstRender)
             return;
 
-        await C15T.Initialize();
+        await C15t.Initialize();
     }
 }

@@ -1,5 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
-
 <Project Sdk="Microsoft.NET.Sdk.Razor">
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
@@ -9,12 +7,12 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <Description>A Blazor interop library for C15T, the consent management platform</Description>
+        <Description>A minimal Blazor wrapper around c15t</Description>
         <Version Condition="'$(BUILD_VERSION)' == ''">4.0.0</Version>
         <Version Condition="'$(BUILD_VERSION)' != ''">$(BUILD_VERSION)</Version>
-        <AssemblyName>Soenneker.Blazor.C15T</AssemblyName>
-        <PackageId>Soenneker.Blazor.C15T</PackageId>
-        <PackageTags>blazor c15t interop consent blazorlibrary csharp dotnet c# .net</PackageTags>
+        <AssemblyName>Soenneker.Blazor.C15t</AssemblyName>
+        <PackageId>Soenneker.Blazor.C15t</PackageId>
+        <PackageTags>blazor c15t consent privacy gdpr interop csharp dotnet c# .net</PackageTags>
         <Copyright>Copyright © 2026 Jake Soenneker</Copyright>
         <Authors>Jake Soenneker</Authors>
         <Company>https://soenneker.com</Company>
@@ -32,18 +30,22 @@
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <LangVersion>latest</LangVersion>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <PackageIcon>icon.png</PackageIcon>
         <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+        <PackageReleaseNotes Condition="'$(PACKAGE_RELEASE_NOTES)' != ''">
+            $(PACKAGE_RELEASE_NOTES)
+        </PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
         <None Include="..\..\README.md" Pack="true" PackagePath="\" />
         <None Include="..\..\LICENSE" Pack="true" PackagePath="\" />
-        <None Include="..\..\icon.png" Pack="true" PackagePath="\" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Soenneker.Asyncs.Initializers" Version="4.0.49" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.8" />
+        <PackageReference Include="Soenneker.Atomics.ValueBools" Version="4.0.26" />
         <PackageReference Include="Soenneker.Blazor.Utils.ResourceLoader" Version="4.0.1662" />
+        <PackageReference Include="Soenneker.Extensions.CancellationTokens" Version="4.0.17" />
+        <PackageReference Include="Soenneker.Utils.CancellationScopes" Version="4.0.38" />
     </ItemGroup>
 </Project>

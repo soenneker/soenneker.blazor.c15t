@@ -1,7 +1,7 @@
-using Soenneker.Blazor.C15T.Abstract;
+using Soenneker.Blazor.C15t.Abstract;
 using Soenneker.Tests.HostedUnit;
 
-namespace Soenneker.Blazor.C15T.Tests;
+namespace Soenneker.Blazor.C15t.Tests;
 
 [ClassDataSource<Host>(Shared = SharedType.PerTestSession)]
 public sealed class C15tTests : HostedUnitTest

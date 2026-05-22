@@ -10,7 +10,7 @@ using Serilog;
 using Serilog.Debugging;
 using Soenneker.Quark;
 using Soenneker.Quark.Gen.Lucide.Generated;
-using Soenneker.Blazor.C15T.Registrars;
+using Soenneker.Blazor.C15t.Registrars;
 using Soenneker.Serilog.Sinks.Browser.Blazor.Registrars;
 
 namespace Soenneker.Blazor.C15T.Demo;
