@@ -1,23 +1,443 @@
 @page "/"
-@using System.Threading.Tasks
+@using Microsoft.AspNetCore.Components.Forms
+@using System.Text.Json
+@using Soenneker.Blazor.C15t.Models
 @using Soenneker.Blazor.C15t.Abstract
 
-@inject IC15t C15t
+@inject IC15tConsentService ConsentService
 
 <PageTitle>Soenneker.Blazor.C15t Demo</PageTitle>
 
-<Div Space="Space.Y.Is4">
-    <Paragraph TextSize="TextSize.Sm" Class="text-muted-foreground">
-        Replace this page with package-specific demos. Initialization runs on first render below.
-    </Paragraph>
+<Div Space="Space.Y.Is6">
+    @if (_state?.ShowPopup == true)
+    {
+        <Card Class="c15t-banner">
+            <CardBody>
+                <Div Class="c15t-banner-content">
+                    <Div Space="Space.Y.Is1">
+                        <H2 TextSize="TextSize.Lg" FontWeight="FontWeight.Semibold" Margin="Margin.Is0">Privacy preferences</H2>
+                        <Paragraph TextSize="TextSize.Sm" TextColor="TextColor.MutedForeground" Margin="Margin.Is0">
+                            This site uses consent categories to decide whether sample analytics and marketing actions are allowed.
+                        </Paragraph>
+                    </Div>
+
+                    <Div Class="c15t-actions c15t-actions-tight">
+                        <Button OnClick="AcceptAll">Accept all</Button>
+                        <Button Variant="ButtonVariant.Outline" OnClick="RejectNonNecessary">Reject non-necessary</Button>
+                        <Button Variant="ButtonVariant.Secondary" OnClick="OpenDialog">Customize</Button>
+                    </Div>
+                </Div>
+            </CardBody>
+        </Card>
+    }
+
+    @if (_state?.IsPrivacyDialogOpen == true)
+    {
+        <Card Class="c15t-preferences">
+            <CardHeader>
+                <Div Display="Display.Flex" Flex="Flex.Wrap" AlignUtility="Align.ItemsCenter.JustifyBetween" Gap="Gap.Is3">
+                    <Div>
+                        <H2 TextSize="TextSize.Lg" FontWeight="FontWeight.Semibold" Margin="Margin.Is0">Preferences center</H2>
+                        <Paragraph TextSize="TextSize.Sm" TextColor="TextColor.MutedForeground" Margin="Margin.Is0">
+                            Choose which non-essential categories should be enabled.
+                        </Paragraph>
+                    </Div>
+
+                    <Button Variant="ButtonVariant.Ghost" OnClick="CloseUi">Close</Button>
+                </Div>
+            </CardHeader>
+            <CardBody>
+                <Div Space="Space.Y.Is3">
+                    @foreach (string category in _categories)
+                    {
+                        <Div Class="c15t-category-row">
+                            <Div>
+                                <Div Class="c15t-category-name">@category</Div>
+                                <Div Class="c15t-category-value">@CategoryDescription(category)</Div>
+                            </Div>
+
+                            <Div Display="Display.Flex" AlignUtility="Align.ItemsCenter" Gap="Gap.Is2">
+                                <InputCheckbox Id="@($"dialog-selected-{category}")"
+                                               Value="@IsSelected(category)"
+                                               ValueChanged="@((bool value) => SetSelected(category, value))"
+                                               disabled="@(category == "necessary")" />
+                                <FieldLabel For="@($"dialog-selected-{category}")" Margin="Margin.Is0" TextSize="TextSize.Sm">Enabled</FieldLabel>
+                            </Div>
+                        </Div>
+                    }
+
+                    <Div Class="c15t-actions">
+                        <Button OnClick="SaveCustom">Save preferences</Button>
+                        <Button Variant="ButtonVariant.Outline" OnClick="AcceptAll">Enable all</Button>
+                        <Button Variant="ButtonVariant.Secondary" OnClick="RejectNonNecessary">Necessary only</Button>
+                    </Div>
+                </Div>
+            </CardBody>
+        </Card>
+    }
+
+    <Card>
+        <CardHeader>
+            <Div Display="Display.Flex" Flex="Flex.Wrap" AlignUtility="Align.ItemsCenter.JustifyBetween" Gap="Gap.Is3">
+                <Div Space="Space.Y.Is1">
+                    <H2 TextSize="TextSize.Xl" FontWeight="FontWeight.Semibold" Margin="Margin.Is0">Consent runtime</H2>
+                    <Paragraph TextSize="TextSize.Sm" TextColor="TextColor.MutedForeground" Margin="Margin.Is0">
+                        Offline runtime with the default jsDelivr ESM module.
+                    </Paragraph>
+                </Div>
+
+                <Div Class="@StatusClass">@StatusText</Div>
+            </Div>
+        </CardHeader>
+        <CardBody>
+            <Grid Columns="GridCols.Is1.OnLg.Is3" Gap="Gap.Is4">
+                <Field>
+                    <FieldLabel For="mode">Mode</FieldLabel>
+                    <FieldBody>
+                        <Input Id="mode" @bind-Value="_options.Mode" />
+                    </FieldBody>
+                </Field>
+
+                <Field>
+                    <FieldLabel For="backend-url">Backend URL</FieldLabel>
+                    <FieldBody>
+                        <Input Id="backend-url" @bind-Value="_options.BackendUrl" Placeholder="Leave blank for offline mode" />
+                    </FieldBody>
+                </Field>
+
+                <Field>
+                    <FieldLabel For="module-url">Module URL</FieldLabel>
+                    <FieldBody>
+                        <Input Id="module-url" @bind-Value="_options.ModuleUrl" />
+                    </FieldBody>
+                </Field>
+            </Grid>
+
+            <Div Class="c15t-actions">
+                <Button OnClick="Initialize">Initialize</Button>
+                <Button Variant="ButtonVariant.Outline" OnClick="Refresh">Refresh</Button>
+                <Button Variant="ButtonVariant.Secondary" OnClick="ShowBanner">Show banner</Button>
+                <Button Variant="ButtonVariant.Secondary" OnClick="OpenDialog">Open dialog</Button>
+                <Button Variant="ButtonVariant.Outline" OnClick="CloseUi">Close UI</Button>
+            </Div>
+        </CardBody>
+    </Card>
+
+    <Card>
+        <CardHeader>
+            <H2 TextSize="TextSize.Lg" FontWeight="FontWeight.Semibold" Margin="Margin.Is0">Consent-gated behavior</H2>
+            <Paragraph TextSize="TextSize.Sm" TextColor="TextColor.MutedForeground" Margin="Margin.Is0">
+                These sample features check the current c15t consent state before doing work.
+            </Paragraph>
+        </CardHeader>
+        <CardBody>
+            <Grid Columns="GridCols.Is1.OnLg.Is3" Gap="Gap.Is4">
+                <Div Class="c15t-feature">
+                    <Div Class="c15t-feature-heading">
+                        <Span Class="@ConsentPillClass("measurement")">@ConsentPillText("measurement")</Span>
+                        <Strong>Analytics</Strong>
+                    </Div>
+                    <Paragraph TextSize="TextSize.Sm" TextColor="TextColor.MutedForeground" Margin="Margin.Is0">
+                        Requires measurement consent before logging a page-view event.
+                    </Paragraph>
+                    <Button Variant="ButtonVariant.Outline" OnClick="@(() => TryRunFeature("measurement", "Analytics page view"))">
+                        Track page view
+                    </Button>
+                </Div>
+
+                <Div Class="c15t-feature">
+                    <Div Class="c15t-feature-heading">
+                        <Span Class="@ConsentPillClass("marketing")">@ConsentPillText("marketing")</Span>
+                        <Strong>Marketing</Strong>
+                    </Div>
+                    <Paragraph TextSize="TextSize.Sm" TextColor="TextColor.MutedForeground" Margin="Margin.Is0">
+                        Requires marketing consent before loading a sample campaign pixel.
+                    </Paragraph>
+                    <Button Variant="ButtonVariant.Outline" OnClick="@(() => TryRunFeature("marketing", "Campaign pixel"))">
+                        Load campaign pixel
+                    </Button>
+                </Div>
+
+                <Div Class="c15t-feature">
+                    <Div Class="c15t-feature-heading">
+                        <Span Class="@ConsentPillClass("experience")">@ConsentPillText("experience")</Span>
+                        <Strong>Personalization</Strong>
+                    </Div>
+                    <Paragraph TextSize="TextSize.Sm" TextColor="TextColor.MutedForeground" Margin="Margin.Is0">
+                        Requires experience consent before changing the sample recommendation.
+                    </Paragraph>
+                    <Button Variant="ButtonVariant.Outline" OnClick="@(() => TryRunFeature("experience", "Personalized recommendation"))">
+                        Personalize
+                    </Button>
+                </Div>
+            </Grid>
+        </CardBody>
+    </Card>
+
+    <Grid Columns="GridCols.Is1.OnLg.Is2" Gap="Gap.Is4">
+        <Card>
+            <CardHeader>
+                <H2 TextSize="TextSize.Lg" FontWeight="FontWeight.Semibold" Margin="Margin.Is0">Choices</H2>
+                <Paragraph TextSize="TextSize.Sm" TextColor="TextColor.MutedForeground" Margin="Margin.Is0">
+                    Edit selected values, save custom preferences, or apply common consent actions.
+                </Paragraph>
+            </CardHeader>
+            <CardBody>
+                <Div Space="Space.Y.Is4">
+                    @foreach (string category in _categories)
+                    {
+                        <Div Class="c15t-category-row">
+                            <Div>
+                                <Div Class="c15t-category-name">@category</Div>
+                                <Div Class="c15t-category-value">@ConsentLabel(category)</Div>
+                            </Div>
+
+                            <Div Display="Display.Flex" AlignUtility="Align.ItemsCenter" Gap="Gap.Is2">
+                                <InputCheckbox Id="@($"selected-{category}")"
+                                               Value="@IsSelected(category)"
+                                               ValueChanged="@((bool value) => SetSelected(category, value))" />
+                                <FieldLabel For="@($"selected-{category}")" Margin="Margin.Is0" TextSize="TextSize.Sm">Selected</FieldLabel>
+                            </Div>
+                        </Div>
+                    }
+
+                    <Div Class="c15t-actions">
+                        <Button OnClick="AcceptAll">Accept all</Button>
+                        <Button Variant="ButtonVariant.Outline" OnClick="RejectNonNecessary">Reject non-necessary</Button>
+                        <Button Variant="ButtonVariant.Secondary" OnClick="SaveCustom">Save custom</Button>
+                        <Button Variant="ButtonVariant.Destructive" OnClick="ResetConsents">Reset</Button>
+                    </Div>
+                </Div>
+            </CardBody>
+        </Card>
+
+        <Card>
+            <CardHeader>
+                <H2 TextSize="TextSize.Lg" FontWeight="FontWeight.Semibold" Margin="Margin.Is0">Effective state</H2>
+                <Paragraph TextSize="TextSize.Sm" TextColor="TextColor.MutedForeground" Margin="Margin.Is0">
+                    Current service state after the latest interop operation.
+                </Paragraph>
+            </CardHeader>
+            <CardBody>
+                <Div Class="c15t-state-grid">
+                    @foreach (string category in _categories)
+                    {
+                        <Div Class="c15t-state-item">
+                            <Span Class="c15t-state-label">@category</Span>
+                            <Span Class="@ConsentPillClass(category)">@ConsentPillText(category)</Span>
+                        </Div>
+                    }
+                </Div>
+
+                <Div Class="c15t-flags">
+                    <Div>Banner: <Strong>@BoolText(_state?.ShowPopup)</Strong></Div>
+                    <Div>Dialog: <Strong>@BoolText(_state?.IsPrivacyDialogOpen)</Strong></Div>
+                    <Div>Loading: <Strong>@BoolText(_state?.IsLoadingConsentInfo)</Strong></Div>
+                </Div>
+            </CardBody>
+        </Card>
+    </Grid>
+
+    <Card>
+        <CardHeader>
+            <Div Display="Display.Flex" Flex="Flex.Wrap" AlignUtility="Align.ItemsCenter.JustifyBetween" Gap="Gap.Is3">
+                <H2 TextSize="TextSize.Lg" FontWeight="FontWeight.Semibold" Margin="Margin.Is0">Activity log</H2>
+                <Button Variant="ButtonVariant.Ghost" OnClick="ClearLog">Clear</Button>
+            </Div>
+        </CardHeader>
+        <CardBody>
+            @if (_events.Count == 0)
+            {
+                <Paragraph TextSize="TextSize.Sm" TextColor="TextColor.MutedForeground" Margin="Margin.Is0">
+                    No events yet.
+                </Paragraph>
+            }
+            else
+            {
+                <Div Class="c15t-log">
+                    @foreach (string item in _events)
+                    {
+                        <Div>@item</Div>
+                    }
+                </Div>
+            }
+        </CardBody>
+    </Card>
+
+    <Card>
+        <CardHeader>
+            <H2 TextSize="TextSize.Lg" FontWeight="FontWeight.Semibold" Margin="Margin.Is0">State JSON</H2>
+        </CardHeader>
+        <CardBody>
+            <pre class="c15t-json">@StateJson</pre>
+        </CardBody>
+    </Card>
 </Div>
 
 @code {
+    private readonly List<string> _categories = ["necessary", "functionality", "experience", "measurement", "marketing"];
+
+    private readonly C15tOptions _options = new()
+    {
+        Mode = "offline",
+        ConsentCategories = ["necessary", "functionality", "experience", "measurement", "marketing"]
+    };
+
+    private C15tConsentState? _state;
+    private string? _error;
+    private bool _initialized;
+    private readonly List<string> _events = [];
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender)
             return;
 
-        await C15t.Initialize();
+        await Initialize();
     }
+
+    private async Task Initialize()
+    {
+        await Run(async () =>
+        {
+            _state = await ConsentService.Initialize(_options);
+            _initialized = true;
+            AddEvent("Initialized c15t runtime");
+        });
+    }
+
+    private Task Refresh() => Run(async () =>
+    {
+        _state = await ConsentService.Refresh();
+        AddEvent("Refreshed state");
+    });
+
+    private Task AcceptAll() => Run(async () =>
+    {
+        _state = await ConsentService.AcceptAll();
+        AddEvent("Accepted all categories");
+    });
+
+    private Task RejectNonNecessary() => Run(async () =>
+    {
+        _state = await ConsentService.RejectNonNecessary();
+        AddEvent("Rejected non-necessary categories");
+    });
+
+    private Task SaveCustom() => Run(async () =>
+    {
+        _state = await ConsentService.SaveCustom();
+        AddEvent("Saved custom preferences");
+    });
+
+    private Task ShowBanner() => Run(async () =>
+    {
+        _state = await ConsentService.ShowBanner();
+        AddEvent("Displayed consent banner");
+    });
+
+    private Task OpenDialog() => Run(async () =>
+    {
+        _state = await ConsentService.OpenDialog();
+        AddEvent("Opened preferences center");
+    });
+
+    private Task CloseUi() => Run(async () =>
+    {
+        _state = await ConsentService.CloseUi();
+        AddEvent("Closed consent UI");
+    });
+
+    private Task ResetConsents() => Run(async () =>
+    {
+        _state = await ConsentService.ResetConsents();
+        AddEvent("Reset saved consents");
+    });
+
+    private async Task SetSelected(string category, bool value)
+    {
+        await Run(async () =>
+        {
+            _state = await ConsentService.SetSelectedConsent(category, value);
+            AddEvent($"Set selected {category} to {value}");
+        });
+    }
+
+    private void TryRunFeature(string category, string feature)
+    {
+        if (ConsentService.HasConsent(category))
+        {
+            AddEvent($"{feature} allowed by {category} consent");
+            return;
+        }
+
+        AddEvent($"{feature} blocked because {category} consent is missing");
+    }
+
+    private void ClearLog()
+    {
+        _events.Clear();
+    }
+
+    private async Task Run(Func<Task> action)
+    {
+        _error = null;
+
+        try
+        {
+            await action();
+        }
+        catch (Exception exception)
+        {
+            _error = exception.Message;
+        }
+
+        StateHasChanged();
+    }
+
+    private bool IsSelected(string category) =>
+        _state?.SelectedConsents?.TryGetValue(category, out bool value) == true && value;
+
+    private string ConsentLabel(string category) =>
+        ConsentService.HasConsent(category) ? "Granted" : "Not granted";
+
+    private string ConsentPillText(string category) =>
+        ConsentService.HasConsent(category) ? "Granted" : "Denied";
+
+    private string ConsentPillClass(string category) =>
+        ConsentService.HasConsent(category) ? "c15t-pill c15t-pill-granted" : "c15t-pill c15t-pill-denied";
+
+    private static string CategoryDescription(string category) => category switch
+    {
+        "necessary" => "Required for core site behavior and always enabled.",
+        "functionality" => "Enables optional product functionality and preferences.",
+        "experience" => "Allows personalization and embedded experiences.",
+        "measurement" => "Allows analytics and aggregate usage measurement.",
+        "marketing" => "Allows campaign tracking and advertising integrations.",
+        _ => "Optional consent category."
+    };
+
+    private void AddEvent(string message)
+    {
+        _events.Insert(0, $"{DateTime.Now:T} - {message}");
+
+        if (_events.Count > 12)
+            _events.RemoveAt(_events.Count - 1);
+    }
+
+    private static string BoolText(bool? value) => value switch
+    {
+        true => "True",
+        false => "False",
+        _ => "Unknown"
+    };
+
+    private string StatusText => _error is not null ? _error : _initialized ? "Initialized" : "Not initialized";
+
+    private string StatusClass => _error is not null ? "c15t-status c15t-status-error" : _initialized ? "c15t-status c15t-status-ready" : "c15t-status";
+
+    private string StateJson => JsonSerializer.Serialize(_state ?? ConsentService.CurrentState, new JsonSerializerOptions
+    {
+        WriteIndented = true
+    });
 }
