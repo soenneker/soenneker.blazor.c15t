@@ -46,7 +46,7 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.10" />
         <PackageReference Include="Soenneker.Atomics.ValueBools" Version="4.0.33" />
-        <PackageReference Include="Soenneker.Blazor.Utils.ResourceLoader" Version="4.0.1697" />
+        <PackageReference Include="Soenneker.Blazor.Utils.ResourceLoader" Version="4.0.1698" />
         <PackageReference Include="Soenneker.Extensions.CancellationTokens" Version="4.0.20" />
         <PackageReference Include="Soenneker.Utils.CancellationScopes" Version="4.0.46" />
     </ItemGroup>
