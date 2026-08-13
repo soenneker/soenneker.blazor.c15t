@@ -3,7 +3,7 @@ let runtime;
 let consentStore;
 
 function getModuleUrl(options) {
-    return options?.moduleUrl || "https://cdn.jsdelivr.net/npm/c15t@1.8.5/+esm";
+    return options?.moduleUrl || "https://cdn.jsdelivr.net/npm/c15t@2.2.0/+esm";
 }
 
 function normalizeOptions(options) {

@@ -18,6 +18,5 @@ public static class C15tConstants
     /// <summary>
     /// The default jsDelivr ESM module URL for c15t.
     /// </summary>
-    public const string DefaultModuleUrl = "https://cdn.jsdelivr.net/npm/c15t@1.8.5/+esm";
+    public const string DefaultModuleUrl = "https://cdn.jsdelivr.net/npm/c15t@2.2.0/+esm";
 }
-
