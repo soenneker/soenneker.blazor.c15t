@@ -13,6 +13,8 @@ public static class C15tRegistrar
     /// <summary>
     /// Adds c15t interop and consent services as scoped services.
     /// </summary>
+    /// <param name="services">Service collection that receives the registration.</param>
+    /// <returns>The same service collection, so additional registrations can be chained.</returns>
     public static IServiceCollection AddC15t(this IServiceCollection services)
     {
         services.AddModuleImportUtilAsScoped();
@@ -26,6 +28,8 @@ public static class C15tRegistrar
     /// <summary>
     /// Adds c15t interop and consent services as scoped services.
     /// </summary>
+    /// <param name="services">Service collection that receives the registration.</param>
+    /// <returns>The same service collection, so additional registrations can be chained.</returns>
     public static IServiceCollection AddC15tAsScoped(this IServiceCollection services)
     {
         return services.AddC15t();
