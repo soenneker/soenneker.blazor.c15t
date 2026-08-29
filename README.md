@@ -2,60 +2,79 @@
 
 # Soenneker.Blazor.C15t
 
-A higher-level Blazor utility built on top of `IC15tInterop`.
+A Blazor wrapper around the c15t consent runtime, with scoped state, consent actions, and a cascading provider.
 
-## Install
+## Installation
 
 ```bash
 dotnet add package Soenneker.Blazor.C15t
 ```
 
-## Quick start
+## Registration
 
 ```csharp
 using Soenneker.Blazor.C15t.Registrars;
-using Microsoft.Extensions.DependencyInjection;
 
-var services = new ServiceCollection();
-var result = services.AddC15t();
+builder.Services.AddC15t();
 ```
 
-Adds c15t interop and consent services as scoped services.
+## Initialize the consent runtime
 
-## What you get
+Wrap the application content with `C15tProvider`. It initializes after the first render, when JavaScript interop is available, and cascades `IC15tConsentService` to descendants.
 
-- `IC15t` — A higher-level Blazor utility built on top of `IC15tInterop`.
-- `IC15tConsentService` — A small stateful service over the c15t interop.
-- `IC15tInterop` — Blazor interop for c15t consent runtime operations.
-- `C15tConstants` — Constants used by the c15t Blazor wrapper.
-- `C15tRegistrar` — Registration extensions for the c15t Blazor wrapper.
-- `C15tConsentState` — A lightweight view of the current c15t consent state.
-- `C15tDisplayedConsent` — A c15t consent category displayed to the visitor.
+```razor
+@using Soenneker.Blazor.C15t
+@using Soenneker.Blazor.C15t.Models
 
-## API at a glance
+<C15tProvider Options="_options">
+    <Router AppAssembly="@typeof(App).Assembly">
+        ...
+    </Router>
+</C15tProvider>
 
-| API | What it does | Result / important behavior |
-| --- | --- | --- |
-| `IC15t.Initialize(cancellationToken)` | Ensures the underlying JavaScript module has been loaded and is ready for use. | A task that completes when the C15t is ready for use. |
-| `IC15tConsentService.CurrentState` | The most recently observed consent state. | The most recently observed consent state. |
-| `IC15tConsentService.Initialize(options, cancellationToken)` | Initializes c15t and captures the current state. | A task whose result is the requested c15t Consent State. |
-| `IC15tConsentService.HasConsent(category)` | Returns true when the specified category has consent. | true if consent has been granted for the category; otherwise, false. |
-| `IC15tConsentService.Refresh(cancellationToken)` | Refreshes the current state from c15t. | A task whose result is the requested c15t Consent State. |
-| `IC15tConsentService.AcceptAll(cancellationToken)` | Accepts all displayed consent categories. | A task whose result is the requested c15t Consent State. |
-| `IC15tConsentService.RejectNonNecessary(cancellationToken)` | Rejects all non-necessary consent categories. | A task whose result is the requested c15t Consent State. |
-| `IC15tConsentService.SaveCustom(cancellationToken)` | Saves selected custom consent choices. | A task whose result is the requested c15t Consent State. |
-| `IC15tConsentService.SetConsent(category, value, cancellationToken)` | Sets and saves one consent category. | A task whose result is the requested c15t Consent State. |
-| `IC15tConsentService.SetSelectedConsent(category, value, cancellationToken)` | Sets one selected consent category without saving. | A task whose result is the requested c15t Consent State. |
-| `IC15tConsentService.OpenDialog(cancellationToken)` | Opens the privacy dialog. | A task whose result is the requested c15t Consent State. |
-| `IC15tConsentService.ShowBanner(cancellationToken)` | Shows the consent banner. | A task whose result is the requested c15t Consent State. |
-| `IC15tConsentService.CloseUi(cancellationToken)` | Closes c15t UI. | A task whose result is the requested c15t Consent State. |
-| `IC15tConsentService.ResetConsents(cancellationToken)` | Resets saved consents. | A task whose result is the requested c15t Consent State. |
-| `IC15tInterop.Initialize(options, cancellationToken)` | Initializes the c15t runtime. | A task whose result is the requested c15t Consent State. |
-| `IC15tInterop.GetState(cancellationToken)` | Gets the current consent state. | A task whose result is the requested c15t Consent State. |
-| `IC15tInterop.AcceptAll(cancellationToken)` | Accepts all displayed consent categories. | A task whose result is the requested c15t Consent State. |
-| `IC15tInterop.RejectNonNecessary(cancellationToken)` | Rejects all non-necessary consent categories. | A task whose result is the requested c15t Consent State. |
+@code {
+    private readonly C15tOptions _options = new()
+    {
+        Mode = "offline",
+        ConsentCategories =
+        [
+            "necessary",
+            "functionality",
+            "experience",
+            "measurement",
+            "marketing"
+        ]
+    };
+}
+```
 
-## Practical notes
+The provider does not delay rendering its children. Code that loads analytics, marketing, or other optional resources must still check consent before running.
 
-- Cancellation stops pending work; it does not undo work that has already completed.
-- Dispose instances you own when their scope ends so held resources can be released.
+## Read and change consent
+
+```razor
+@using Soenneker.Blazor.C15t.Abstract
+@inject IC15tConsentService Consent
+
+<button @onclick="async () => await Consent.AcceptAll()">Accept all</button>
+<button @onclick="async () => await Consent.RejectNonNecessary()">Necessary only</button>
+
+@if (Consent.HasConsent("measurement"))
+{
+    <p>Analytics may be enabled.</p>
+}
+```
+
+`CurrentState` is the last state returned by an operation through this scoped service. `Refresh()` reads the runtime again. For a custom preferences UI, call `SetSelectedConsent(category, value)` for each pending choice and then `SaveCustom()`; `SetConsent()` saves one category immediately.
+
+`AcceptAll()`, `RejectNonNecessary()`, `ResetConsents()`, `OpenDialog()`, `ShowBanner()`, and `CloseUi()` all return the resulting state and update `CurrentState`.
+
+## Runtime options
+
+- With no backend URL, the wrapper selects offline mode.
+- `BackendUrl` and `Mode` configure a hosted or self-hosted c15t consent manager.
+- `ConsentCategories` is forwarded as c15t's initial GDPR categories.
+- `ExtensionData` forwards additional c15t options without requiring wrapper changes.
+- `ModuleUrl` defaults to the pinned c15t ESM package on jsDelivr. Relative same-origin URLs are supported for self-hosting.
+
+The module URL must resolve to HTTPS, except for loopback HTTP development URLs. It is executable code: only configure a module location you control or explicitly trust. If a Content Security Policy is enabled, allow the selected module origin and any configured backend origin.

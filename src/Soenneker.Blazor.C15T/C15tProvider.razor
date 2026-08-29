@@ -26,8 +26,7 @@
         if (!firstRender || _initialized)
             return;
 
-        _initialized = true;
         await ConsentService.Initialize(Options);
+        _initialized = true;
     }
 }
-

@@ -3,7 +3,15 @@ let runtime;
 let consentStore;
 
 function getModuleUrl(options) {
-    return options?.moduleUrl || "https://cdn.jsdelivr.net/npm/c15t@2.2.0/+esm";
+    const configuredUrl = options?.moduleUrl || "https://cdn.jsdelivr.net/npm/c15t@2.2.0/+esm";
+    const moduleUrl = new URL(configuredUrl, window.location.href);
+    const loopbackHttp = moduleUrl.protocol === "http:" &&
+        (moduleUrl.hostname === "localhost" || moduleUrl.hostname === "127.0.0.1" || moduleUrl.hostname === "[::1]");
+
+    if (moduleUrl.protocol !== "https:" && !loopbackHttp)
+        throw new Error("The c15t module URL must use HTTPS unless it is a loopback HTTP URL.");
+
+    return moduleUrl.href;
 }
 
 function normalizeOptions(options) {
