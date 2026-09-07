@@ -43,54 +43,54 @@ public sealed class C15tInterop : IC15tInterop
         }
     }
 
-    public async ValueTask<C15tConsentState?> GetState(CancellationToken cancellationToken = default)
+    public ValueTask<C15tConsentState?> GetState(CancellationToken cancellationToken = default)
     {
-        return await Invoke<C15tConsentState?>("getState", cancellationToken);
+        return Invoke<C15tConsentState?>("getState", cancellationToken);
     }
 
-    public async ValueTask<C15tConsentState?> AcceptAll(CancellationToken cancellationToken = default)
+    public ValueTask<C15tConsentState?> AcceptAll(CancellationToken cancellationToken = default)
     {
-        return await Invoke<C15tConsentState?>("acceptAll", cancellationToken);
+        return Invoke<C15tConsentState?>("acceptAll", cancellationToken);
     }
 
-    public async ValueTask<C15tConsentState?> RejectNonNecessary(CancellationToken cancellationToken = default)
+    public ValueTask<C15tConsentState?> RejectNonNecessary(CancellationToken cancellationToken = default)
     {
-        return await Invoke<C15tConsentState?>("rejectNonNecessary", cancellationToken);
+        return Invoke<C15tConsentState?>("rejectNonNecessary", cancellationToken);
     }
 
-    public async ValueTask<C15tConsentState?> SaveCustom(CancellationToken cancellationToken = default)
+    public ValueTask<C15tConsentState?> SaveCustom(CancellationToken cancellationToken = default)
     {
-        return await Invoke<C15tConsentState?>("saveCustom", cancellationToken);
+        return Invoke<C15tConsentState?>("saveCustom", cancellationToken);
     }
 
-    public async ValueTask<C15tConsentState?> SetConsent(string category, bool value, CancellationToken cancellationToken = default)
+    public ValueTask<C15tConsentState?> SetConsent(string category, bool value, CancellationToken cancellationToken = default)
     {
-        return await Invoke<C15tConsentState?>("setConsent", cancellationToken, category, value);
+        return Invoke<C15tConsentState?>("setConsent", cancellationToken, category, value);
     }
 
-    public async ValueTask<C15tConsentState?> SetSelectedConsent(string category, bool value, CancellationToken cancellationToken = default)
+    public ValueTask<C15tConsentState?> SetSelectedConsent(string category, bool value, CancellationToken cancellationToken = default)
     {
-        return await Invoke<C15tConsentState?>("setSelectedConsent", cancellationToken, category, value);
+        return Invoke<C15tConsentState?>("setSelectedConsent", cancellationToken, category, value);
     }
 
-    public async ValueTask<C15tConsentState?> OpenDialog(CancellationToken cancellationToken = default)
+    public ValueTask<C15tConsentState?> OpenDialog(CancellationToken cancellationToken = default)
     {
-        return await Invoke<C15tConsentState?>("openDialog", cancellationToken);
+        return Invoke<C15tConsentState?>("openDialog", cancellationToken);
     }
 
-    public async ValueTask<C15tConsentState?> ShowBanner(CancellationToken cancellationToken = default)
+    public ValueTask<C15tConsentState?> ShowBanner(CancellationToken cancellationToken = default)
     {
-        return await Invoke<C15tConsentState?>("showBanner", cancellationToken);
+        return Invoke<C15tConsentState?>("showBanner", cancellationToken);
     }
 
-    public async ValueTask<C15tConsentState?> CloseUi(CancellationToken cancellationToken = default)
+    public ValueTask<C15tConsentState?> CloseUi(CancellationToken cancellationToken = default)
     {
-        return await Invoke<C15tConsentState?>("closeUi", cancellationToken);
+        return Invoke<C15tConsentState?>("closeUi", cancellationToken);
     }
 
-    public async ValueTask<C15tConsentState?> ResetConsents(CancellationToken cancellationToken = default)
+    public ValueTask<C15tConsentState?> ResetConsents(CancellationToken cancellationToken = default)
     {
-        return await Invoke<C15tConsentState?>("resetConsents", cancellationToken);
+        return Invoke<C15tConsentState?>("resetConsents", cancellationToken);
     }
 
     private async ValueTask<T> Invoke<T>(string identifier, CancellationToken cancellationToken, params object?[] args)
