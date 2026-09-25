@@ -7,6 +7,7 @@ using Soenneker.Blazor.Utils.ModuleImport.Abstract;
 using Soenneker.Extensions.CancellationTokens;
 using Soenneker.Utils.CancellationScopes;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -93,7 +94,9 @@ public sealed class C15tInterop : IC15tInterop
         return Invoke<C15tConsentState?>("resetConsents", cancellationToken);
     }
 
-    private async ValueTask<T> Invoke<T>(string identifier, CancellationToken cancellationToken, params object?[] args)
+    private async ValueTask<T> Invoke<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors |
+        DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)] T>(
+        string identifier, CancellationToken cancellationToken, params object?[] args)
     {
         ThrowIfDisposed();
 
