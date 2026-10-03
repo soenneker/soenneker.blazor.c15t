@@ -24,9 +24,9 @@ function normalizeOptions(options) {
     return normalized;
 }
 
-async function getModule(moduleUrl) {
+function getModule(moduleUrl) {
     c15tModulePromise ??= import(moduleUrl);
-    return await c15tModulePromise;
+    return c15tModulePromise;
 }
 
 function requireStore() {
@@ -105,23 +105,23 @@ export function getState() {
     return mapState(getRawState());
 }
 
-export async function acceptAll() {
-    return await afterAction(getRawState().saveConsents?.("all"));
+export function acceptAll() {
+    return afterAction(getRawState().saveConsents?.("all"));
 }
 
-export async function rejectNonNecessary() {
-    return await afterAction(getRawState().saveConsents?.("necessary"));
+export function rejectNonNecessary() {
+    return afterAction(getRawState().saveConsents?.("necessary"));
 }
 
-export async function saveCustom() {
-    return await afterAction(getRawState().saveConsents?.("custom"));
+export function saveCustom() {
+    return afterAction(getRawState().saveConsents?.("custom"));
 }
 
-export async function setConsent(category, value) {
+export function setConsent(category, value) {
     if (!category)
         throw new Error("category is required.");
 
-    return await afterAction(getRawState().setConsent?.(category, value));
+    return afterAction(getRawState().setConsent?.(category, value));
 }
 
 export function setSelectedConsent(category, value) {

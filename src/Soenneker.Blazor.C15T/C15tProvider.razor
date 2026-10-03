@@ -2,7 +2,7 @@
 @using Soenneker.Blazor.C15t.Models
 @inject IC15tConsentService ConsentService
 
-<CascadingValue Value="ConsentService">
+<CascadingValue Value="ConsentService" IsFixed="true">
     @ChildContent
 </CascadingValue>
 

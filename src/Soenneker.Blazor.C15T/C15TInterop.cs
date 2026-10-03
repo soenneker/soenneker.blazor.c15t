@@ -16,7 +16,7 @@ namespace Soenneker.Blazor.C15t;
 /// <inheritdoc cref="IC15tInterop"/>
 public sealed class C15tInterop : IC15tInterop
 {
-    private const string _modulePath = C15tConstants.InteropScript;
+    private const string _modulePath = "./" + C15tConstants.InteropScript;
 
     private readonly IModuleImportUtil _moduleImportUtil;
     private readonly CancellationScope _cancellationScope = new();
