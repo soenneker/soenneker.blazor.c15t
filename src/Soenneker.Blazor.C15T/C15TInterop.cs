@@ -7,7 +7,7 @@ using Soenneker.Blazor.Utils.ModuleImport.Abstract;
 using Soenneker.Extensions.CancellationTokens;
 using Soenneker.Utils.CancellationScopes;
 using System;
-using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -38,7 +38,9 @@ public sealed class C15tInterop : IC15tInterop
         using (source)
         {
             IJSObjectReference module = await _moduleImportUtil.GetContentModuleReference(_modulePath, linked);
-            C15tConsentState? state = await module.InvokeAsync<C15tConsentState?>("initialize", linked, options ?? new C15tOptions());
+            JsonElement payload = await module.InvokeAsync<JsonElement>("initialize", linked,
+                JsonSerializer.SerializeToElement(options ?? new C15tOptions(), InteropJsonContext.Default.C15tOptions));
+            C15tConsentState? state = payload.Deserialize(InteropJsonContext.Default.C15tConsentState);
             _initialized = true;
             return state;
         }
@@ -46,56 +48,55 @@ public sealed class C15tInterop : IC15tInterop
 
     public ValueTask<C15tConsentState?> GetState(CancellationToken cancellationToken = default)
     {
-        return Invoke<C15tConsentState?>("getState", cancellationToken);
+        return Invoke("getState", cancellationToken);
     }
 
     public ValueTask<C15tConsentState?> AcceptAll(CancellationToken cancellationToken = default)
     {
-        return Invoke<C15tConsentState?>("acceptAll", cancellationToken);
+        return Invoke("acceptAll", cancellationToken);
     }
 
     public ValueTask<C15tConsentState?> RejectNonNecessary(CancellationToken cancellationToken = default)
     {
-        return Invoke<C15tConsentState?>("rejectNonNecessary", cancellationToken);
+        return Invoke("rejectNonNecessary", cancellationToken);
     }
 
     public ValueTask<C15tConsentState?> SaveCustom(CancellationToken cancellationToken = default)
     {
-        return Invoke<C15tConsentState?>("saveCustom", cancellationToken);
+        return Invoke("saveCustom", cancellationToken);
     }
 
     public ValueTask<C15tConsentState?> SetConsent(string category, bool value, CancellationToken cancellationToken = default)
     {
-        return Invoke<C15tConsentState?>("setConsent", cancellationToken, category, value);
+        return Invoke("setConsent", cancellationToken, category, value);
     }
 
     public ValueTask<C15tConsentState?> SetSelectedConsent(string category, bool value, CancellationToken cancellationToken = default)
     {
-        return Invoke<C15tConsentState?>("setSelectedConsent", cancellationToken, category, value);
+        return Invoke("setSelectedConsent", cancellationToken, category, value);
     }
 
     public ValueTask<C15tConsentState?> OpenDialog(CancellationToken cancellationToken = default)
     {
-        return Invoke<C15tConsentState?>("openDialog", cancellationToken);
+        return Invoke("openDialog", cancellationToken);
     }
 
     public ValueTask<C15tConsentState?> ShowBanner(CancellationToken cancellationToken = default)
     {
-        return Invoke<C15tConsentState?>("showBanner", cancellationToken);
+        return Invoke("showBanner", cancellationToken);
     }
 
     public ValueTask<C15tConsentState?> CloseUi(CancellationToken cancellationToken = default)
     {
-        return Invoke<C15tConsentState?>("closeUi", cancellationToken);
+        return Invoke("closeUi", cancellationToken);
     }
 
     public ValueTask<C15tConsentState?> ResetConsents(CancellationToken cancellationToken = default)
     {
-        return Invoke<C15tConsentState?>("resetConsents", cancellationToken);
+        return Invoke("resetConsents", cancellationToken);
     }
 
-    private async ValueTask<T> Invoke<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors |
-        DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)] T>(
+    private async ValueTask<C15tConsentState?> Invoke(
         string identifier, CancellationToken cancellationToken, params object?[] args)
     {
         ThrowIfDisposed();
@@ -105,7 +106,8 @@ public sealed class C15tInterop : IC15tInterop
         using (source)
         {
             IJSObjectReference module = await _moduleImportUtil.GetContentModuleReference(_modulePath, linked);
-            return await module.InvokeAsync<T>(identifier, linked, args);
+            JsonElement payload = await module.InvokeAsync<JsonElement>(identifier, linked, args);
+            return payload.Deserialize(InteropJsonContext.Default.C15tConsentState);
         }
     }
 
