@@ -37,12 +37,19 @@ public sealed class C15tInterop : IC15tInterop
 
         using (source)
         {
-            IJSObjectReference module = await _moduleImportUtil.GetContentModuleReference(_modulePath, linked);
-            JsonElement payload = await module.InvokeAsync<JsonElement>("initialize", linked,
-                JsonSerializer.SerializeToElement(options ?? new C15tOptions(), InteropJsonContext.Default.C15tOptions));
-            C15tConsentState? state = payload.Deserialize(InteropJsonContext.Default.C15tConsentState);
-            _initialized = true;
-            return state;
+            try
+            {
+                IJSObjectReference module = await _moduleImportUtil.GetContentModuleReference(_modulePath, linked);
+                JsonElement payload = await module.InvokeAsync<JsonElement>("initialize", linked,
+                    JsonSerializer.SerializeToElement(options ?? new C15tOptions(), InteropJsonContext.Default.C15tOptions));
+                C15tConsentState? state = payload.Deserialize(InteropJsonContext.Default.C15tConsentState);
+                _initialized = true;
+                return state;
+            }
+            catch (JSException exception)
+            {
+                throw new JSException($"JavaScript operation 'C15tInterop.Initialize' failed: {exception.Message}", exception);
+            }
         }
     }
 
@@ -105,9 +112,16 @@ public sealed class C15tInterop : IC15tInterop
 
         using (source)
         {
-            IJSObjectReference module = await _moduleImportUtil.GetContentModuleReference(_modulePath, linked);
-            JsonElement payload = await module.InvokeAsync<JsonElement>(identifier, linked, args);
-            return payload.Deserialize(InteropJsonContext.Default.C15tConsentState);
+            try
+            {
+                IJSObjectReference module = await _moduleImportUtil.GetContentModuleReference(_modulePath, linked);
+                JsonElement payload = await module.InvokeAsync<JsonElement>(identifier, linked, args);
+                return payload.Deserialize(InteropJsonContext.Default.C15tConsentState);
+            }
+            catch (JSException exception)
+            {
+                throw new JSException($"JavaScript operation 'C15tInterop.{identifier}' failed: {exception.Message}", exception);
+            }
         }
     }
 
