@@ -51,4 +51,7 @@
     <ItemGroup>
         <InternalsVisibleTo Include="Soenneker.Blazor.C15t.TrimSmoke" />
     </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Soenneker.Blazor.Extensions.IJSObjectReferences" Version="11.0.2" />
+    </ItemGroup>
 </Project>

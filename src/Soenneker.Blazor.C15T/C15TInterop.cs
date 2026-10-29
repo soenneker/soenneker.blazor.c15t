@@ -1,4 +1,5 @@
 using Microsoft.JSInterop;
+using Soenneker.Blazor.Extensions.IJSObjectReferences;
 using Soenneker.Atomics.ValueBools;
 using Soenneker.Blazor.C15t.Abstract;
 using Soenneker.Blazor.C15t.Constants;
@@ -37,19 +38,11 @@ public sealed class C15tInterop : IC15tInterop
 
         using (source)
         {
-            try
-            {
-                IJSObjectReference module = await _moduleImportUtil.GetContentModuleReference(_modulePath, linked);
-                JsonElement payload = await module.InvokeAsync<JsonElement>("initialize", linked,
-                    JsonSerializer.SerializeToElement(options ?? new C15tOptions(), InteropJsonContext.Default.C15tOptions));
-                C15tConsentState? state = payload.Deserialize(InteropJsonContext.Default.C15tConsentState);
-                _initialized = true;
-                return state;
-            }
-            catch (JSException exception)
-            {
-                throw new JSException($"JavaScript operation 'C15tInterop.Initialize' failed: {exception.Message}", exception);
-            }
+            IJSObjectReference module = await _moduleImportUtil.GetContentModuleReference(_modulePath, linked);
+            C15tConsentState? state = await module.InvokeWithContextAsync("initialize", InteropJsonContext.Default.C15tConsentState, linked,
+                JsonSerializer.SerializeToElement(options ?? new C15tOptions(), InteropJsonContext.Default.C15tOptions));
+            _initialized = true;
+            return state;
         }
     }
 
@@ -112,16 +105,8 @@ public sealed class C15tInterop : IC15tInterop
 
         using (source)
         {
-            try
-            {
-                IJSObjectReference module = await _moduleImportUtil.GetContentModuleReference(_modulePath, linked);
-                JsonElement payload = await module.InvokeAsync<JsonElement>(identifier, linked, args);
-                return payload.Deserialize(InteropJsonContext.Default.C15tConsentState);
-            }
-            catch (JSException exception)
-            {
-                throw new JSException($"JavaScript operation 'C15tInterop.{identifier}' failed: {exception.Message}", exception);
-            }
+            IJSObjectReference module = await _moduleImportUtil.GetContentModuleReference(_modulePath, linked);
+            return await module.InvokeWithContextAsync(identifier, InteropJsonContext.Default.C15tConsentState, linked, args);
         }
     }
 
