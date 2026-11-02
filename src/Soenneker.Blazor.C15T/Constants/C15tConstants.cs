@@ -13,7 +13,7 @@ public static class C15tConstants
     /// <summary>
     /// The package-owned JavaScript interop module path.
     /// </summary>
-    public const string InteropScript = "_content/Soenneker.Blazor.C15t/c15tinterop.js";
+    public const string InteropScript = "_content/Soenneker.Blazor.C15t/c15tinterop.min.js";
 
     /// <summary>
     /// The default jsDelivr ESM module URL for c15t.
